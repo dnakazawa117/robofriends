@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+
+import { setSearchField, requestRobots } from '../actions.js';
 
 import CardList      from '../components/CardList.js';
 import ErrorBoundary from '../components/ErrorBoundary.js';
@@ -7,33 +10,34 @@ import SearchBox     from '../components/SearchBox.js';
 
 import './App.css';
 
-export default function App() {
-    const [robots, setRobots] = useState([]);
-    const [searchField, setSearchField] = useState('');
 
-    useEffect(() => {
-        fetch('https://jsonplaceholder.typicode.com/users')
-            .then(response => response.json())
-            .then(users => setRobots(users))
-            .catch(err => console.log('Error:', err));
-    }, []);
-
-    function onSearchChange(event) {
-        setSearchField(event.target.value);
+function App({ store }) {
+    const searchField = useSelector((state) => state.searchRobots.searchField);
+    const robots      = useSelector((state) => state.requestRobots.robots);
+    const isPending   = useSelector((state) => state.requestRobots.isPending);
+    const error       = useSelector((state) => state.requestRobots.error);
+    const dispatch    = useDispatch();
+    
+    const onSearchChange = (event) => {
+        dispatch(setSearchField(event.target.value));
     }
-
+    
+    useEffect(() => {
+        dispatch(requestRobots());
+    }, [dispatch]);
+    
     const filteredRobots = robots.filter(robot => {
         return robot.name
                 .toLowerCase()
                 .includes(searchField.toLowerCase());
     });
 
-    return !robots.length ?
+    return isPending ?
         <h1>Loading...</h1> :
         (
             <div className='tc'>
                 <h1 className='f1'>RoboFriends</h1>
-                <SearchBox onSearchChange={onSearchChange} />
+                <SearchBox onSearchChange={onSearchChange } />
                 <Scroll>
                     <ErrorBoundary>
                         <CardList robots={filteredRobots} />
@@ -42,5 +46,7 @@ export default function App() {
             </div>
         );
 }
+
+export default App;
 
 /*** end of file ***/
